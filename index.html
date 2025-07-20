@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meslek ve Renk Eşleştirme Oyunu</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f3e8ff 0%, #c084fc 100%);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      color: #3b0764;
+      margin: 0; padding: 2rem 1rem 4rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2.4rem;
+    }
+    #welcomeMsg {
+      margin: 0 0 1rem;
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: #6a0dad;
+    }
+    form {
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.7rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      padding: 0.6rem 1rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: 2px solid #b084fc;
+      outline: none;
+      min-width: 200px;
+    }
+    button {
+      background-color: #7b2cbf;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 0.7rem 1.5rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #9333ea;
+    }
+    .game-info {
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 1rem;
+      max-width: 720px;
+      width: 100%;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 5px 15px rgba(107, 33, 182, 0.4);
+      height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #3b0764;
+      position: relative;
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+    .card.flipped, .card.matched {
+      background-color: #7b2cbf;
+      color: white;
+      cursor: default;
+      transform: scale(1.05);
+      box-shadow: 0 0 12px 3px #b084fc;
+    }
+    .card.matched {
+      background-color: #b084fc;
+      box-shadow: 0 0 15px 4px #d1aaff;
+    }
+    .card.disabled {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    nav {
+      margin-top: 3rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      background-color: #b084fc;
+      padding: 0.6rem 1.2rem;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    nav a:hover {
+      background-color: #7b2cbf;
+    }
+    @media (max-width: 600px) {
+      .game-board {
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      }
+      input[type="text"] {
+        min-width: 100%;
+      }
+      form {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Meslek & Renk Eşleştirme Oyunu</h1>
+    <p id="welcomeMsg">Lütfen adını yaz ve oyuna başla!</p>
+    <form id="nameForm">
+      <input type="text" id="nameInput" placeholder="Adın ne?" required />
+      <button type="submit">Başla</button>
+    </form>
+  </header>
+
+  <main>
+    <p class="game-info" id="gameInfo" style="display:none;">Kartları eşleştir ve oyunu bitir! 🎉</p>
+    <div class="game-board" id="gameBoard"></div>
+  </main>
+
+  <nav>
+    <a href="https://xn--ingilizceogreniyorum-idldcj.my.canva.site/ingilizce-reniyorum">🎨 MESLEKLERİ ÖĞRENELİM</a>
+    <a href="file:///Users/ozlemyeliz/Desktop/masau%CC%88stu%CC%88/meslekler.html">🏠 Ana Sayfa</a>
+    <a href="file:///Users/ozlemyeliz/Desktop/masau%CC%88stu%CC%88/32.html">🌈 Renkler</a>
+  </nav>
+
+  <script>
+    const nameForm = document.getElementById('nameForm');
+    const nameInput = document.getElementById('nameInput');
+    const welcomeMsg = document.getElementById('welcomeMsg');
+    const gameInfo = document.getElementById('gameInfo');
+    const gameBoard = document.getElementById('gameBoard');
+
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let matchedPairs = 0;
+
+    // Meslek ve renk kartları (her mesleğe karşılık renk)
+    // Eşleşme ID ile yapılacak (id ile kartlar eşleşecek)
+    const cardsData = [
+      { id: '1', type: 'meslek', text: 'Doctor' },
+      { id: '1', type: 'renk', text: 'White' },
+
+      { id: '2', type: 'meslek', text: 'Teacher' },
+      { id: '2', type: 'renk', text: 'Yellow' },
+
+      { id: '3', type: 'meslek', text: 'Firefighter' },
+      { id: '3', type: 'renk', text: 'Red' },
+
+      { id: '4', type: 'meslek', text: 'Painter' },
+      { id: '4', type: 'renk', text: 'Orange' },
+
+      { id: '5', type: 'meslek', text: 'Gardener' },
+      { id: '5', type: 'renk', text: 'Green' },
+
+      { id: '6', type: 'meslek', text: 'Police' },
+      { id: '6', type: 'renk', text: 'Blue' },
+    ];
+
+    function shuffle(array) {
+      for(let i = array.length -1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function createCard(cardData) {
+      const card = document.createElement('div');
+      card.classList.add('card');
+      card.dataset.id = cardData.id;
+      card.dataset.type = cardData.type;
+      card.textContent = cardData.text;
+      return card;
+    }
+
+    function resetGame() {
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      matchedPairs = 0;
+      gameBoard.innerHTML = '';
+
+      const shuffledCards = shuffle([...cardsData]);
+      shuffledCards.forEach(cardData => {
+        const card = createCard(cardData);
+        card.addEventListener('click', onCardClick);
+        gameBoard.appendChild(card);
+      });
+      gameInfo.style.display = 'block';
+    }
+
+    function onCardClick(e) {
+      if (lockBoard) return;
+      const clickedCard = e.currentTarget;
+      if (clickedCard === firstCard || clickedCard.classList.contains('matched')) return;
+
+      clickedCard.classList.add('flipped');
+
+      if (!firstCard) {
+        firstCard = clickedCard;
+        return;
+      }
+      secondCard = clickedCard;
+      lockBoard = true;
+
+      if (firstCard.dataset.id === secondCard.dataset.id && firstCard.dataset.type !== secondCard.dataset.type) {
+        // Eşleşti
+        firstCard.classList.add('matched');
+        secondCard.classList.add('matched');
+        matchedPairs++;
+        resetTurn();
+        if (matchedPairs === cardsData.length / 2) {
+          gameInfo.textContent = `Tebrikler ${savedName || 'Oyuncu'}, oyunu bitirdin! 🎉`;
+        }
+      } else {
+        // Eşleşmedi
+        setTimeout(() => {
+          firstCard.classList.remove('flipped');
+          secondCard.classList.remove('flipped');
+          resetTurn();
+        }, 1200);
+      }
+    }
+
+    function resetTurn() {
+      [firstCard, secondCard] = [null, null];
+      lockBoard = false;
+    }
+
+    let savedName = '';
+
+    nameForm.addEventListener('submit', e => {
+      e.preventDefault();
+      savedName = nameInput.value.trim();
+      if (!savedName) return;
+      welcomeMsg.textContent = `Hoş geldin, ${savedName}! Oyun başlıyor... 🎉`;
+      nameForm.style.display = 'none';
+      resetGame();
+    });
+
+  </script>
+</body>
+</html>
